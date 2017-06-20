@@ -9,7 +9,10 @@ extern "C" {
 }
 
 
-// THIS IS FOR LUA 5.3 although you can make a few changes for other versions
+// THIS WAS BUILT FOR LUA 5.3 although you can make a few changes for other versions.
+//
+// To compile with Lua 5.1:
+// #define LUA_VERSION_5_1
 
 
 
@@ -373,12 +376,24 @@ static const struct luaL_Reg imguilib [] = {
   {NULL, NULL}
 };
 
+
+// Wrapper intended to be equivalent to Lua 5.2's luaL_setfuncs.
+void compat_luaL_setfuncs(lua_State* L, const luaL_Reg* l, int nup, const char* name)
+{
+#if LUA_VERSION_5_1
+  lua_setglobal(L,name);
+  luaL_register(L,name,l);
+#else
+  luaL_setfuncs(L,l,nup);
+#endif
+}
+
 void LoadImguiBindings() {
   if (!lState) {
     fprintf(stderr, "You didn't assign the global lState, either assign that or refactor LoadImguiBindings and RunString\n");
   }
   lua_newtable(lState);
-  luaL_setfuncs(lState, imguilib, 0);
+  compat_luaL_setfuncs(lState, imguilib, 0, "imguilib");
   lua_setglobal(lState, "imgui");
 
   // Enums not handled by iterator yet
